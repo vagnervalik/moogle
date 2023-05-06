@@ -1,17 +1,27 @@
 ﻿namespace MoogleEngine;
+using System.IO;
 
 
-public static class Moogle
-{
-    public static SearchResult Query(string query) {
+public class Moogle{
+    public DataBase Docs;
+    public Matrix M;
+    public Moogle(string address){
+        this.Docs = new DataBase(address);
+        this.M = new Matrix(this.Docs);
+    }
+    public SearchResult Query(string query) {
         // Modifique este método para responder a la búsqueda
+        Vector qry = new Vector(query, this.Docs.Vocabulary());
+        var scores = this.M.GetScores(qry);
 
-        SearchItem[] items = new SearchItem[3] {
-            new SearchItem("Hello World", "Lorem ipsum dolor sit amet", 0.9f),
-            new SearchItem("Hello World", "Lorem ipsum dolor sit amet", 0.5f),
-            new SearchItem("Hello World", "Lorem ipsum dolor sit amet", 0.1f),
-        };
-
+        List<SearchItem> Items = new List<SearchItem>();
+        for(int i = 0; i < scores.score.Length; i++){
+            if(scores.score[i] == 0){
+                break;
+            }
+            Items.Add(new SearchItem(scores.name[i], scores.snippet[i], scores.score[i]));
+        }
+        SearchItem[] items = Items.ToArray();
         return new SearchResult(items, query);
     }
 }

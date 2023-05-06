@@ -1,12 +1,14 @@
 ﻿@page "/"
-
+@inject IJSRuntime JSRuntime
 <PageTitle>Moogle!</PageTitle>
 
 <h1>🔍 Moogle!</h1>
 
-<input class="p-1 my-4" @bind="query" placeholder="Introduzca su búsqueda">
+<input class="p-1 my-4" @bind="query" placeholder="Introduzca su búsqueda">  
 
 <button type="default" class="btn btn-primary" @onclick="RunQuery">🔍 Buscar</button>
+
+
 
 @if (!string.IsNullOrEmpty(result.Suggestion)) {
     <div class="suggestion">
@@ -25,11 +27,20 @@
 }
 </ul>
 
+
 @code {
+    private bool isButtonClicked = false;
     private string query = "";
     private SearchResult result = new SearchResult();
-
+    private Moogle moogle;
+    protected override void OnInitialized(){
+        moogle = new Moogle(@"..\Content");
+        ShowAlert();
+    }
+    private void ShowAlert(){
+    JSRuntime.InvokeVoidAsync("alert", "Database loaded!");
+    }
     private void RunQuery() {
-        result = Moogle.Query(query);
+        result = moogle.Query(query);
     }
 }
