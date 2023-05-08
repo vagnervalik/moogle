@@ -21,7 +21,9 @@ public class Moogle{
             }
             Items.Add(new SearchItem(scores.name[i], scores.snippet[i], scores.score[i]));
         }
+        string suggestion = this.M.GetSuggestion(query);
+        Console.WriteLine(this.M.GetSuggestion(query));
         SearchItem[] items = Items.ToArray();
-        return new SearchResult(items, query);
+        return new SearchResult(items, suggestion);
     }
 }

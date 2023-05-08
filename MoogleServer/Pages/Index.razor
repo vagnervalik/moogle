@@ -11,8 +11,9 @@
 
 
 @if (!string.IsNullOrEmpty(result.Suggestion)) {
-    <div class="suggestion">
-        <p>¿Quisite decir <strong><a href="#">@result.Suggestion</a></strong>?</p>
+    <div class="suggestion" >
+        <p>Resultados para: <strong><a href="#">@result.Suggestion</a></strong>?</p>
+        <p>¿Desea buscar <strong><a href="#">@query</a></strong> en su lugar?</p>
     </div>
 }
 
@@ -20,16 +21,14 @@
 @foreach (var item in result.Items()) {
     <li>
         <div class="item">
-            <p class="title">@item.Title</p>
+            <p class="title"><a href="#">@item.Title</a></p>
             <p>... @item.Snippet ...</p>
         </div>
     </li>
 }
 </ul>
 
-
 @code {
-    private bool isButtonClicked = false;
     private string query = "";
     private SearchResult result = new SearchResult();
     private Moogle moogle;
@@ -39,6 +38,9 @@
     }
     private void ShowAlert(){
     JSRuntime.InvokeVoidAsync("alert", "Database loaded!");
+    }
+    private void RunSuggestion(){
+        result = moogle.Query(result.Suggestion);
     }
     private void RunQuery() {
         result = moogle.Query(query);

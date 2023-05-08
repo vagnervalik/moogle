@@ -22,7 +22,7 @@ public class DataBase{
         string[] Files = Directory.GetFiles(address);
         string[] AllFiles = new string[Files.Length];
         for (int i = 0; i < Files.Length; i++){
-            AllFiles[i] = File.ReadAllText(Files[i]).Replace("\n", "").Replace("\r", "");
+            AllFiles[i] = File.ReadAllText(Files[i]).Replace("\n", " ").Replace("\r", " ");
         }
         return AllFiles;
     }
@@ -74,19 +74,7 @@ public class DataBase{
     public string[] Vocabulary(){
        return this.AllWords;
     }
-
-    public string  PrintVocabulary(){
-        string vocab = "";
-        for(int i = 0; i < this.AllWords.Length; i++){
-            if(i != this.AllWords.Length - 1){
-                vocab = vocab + this.AllWords[i] + " ";
-            } else{
-                vocab = vocab + this.AllWords[i] + " ";
-            }
-        }
-        return vocab;
-    }
-
+    
     //RETURNS ALL THE WORDS IN A DOCUMENTS BASED ON A GIVEN INDEX.
     public string[] Get(int pos){
         return this.Docs[pos];

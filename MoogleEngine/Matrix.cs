@@ -16,6 +16,7 @@ public class Matrix{
         this.Dict = this.GetDictionary();
     }
 
+    //CONSTRUCTOR AID FOR THE FIELD Idfs.
     public float[] GetIdfs(){
         float size = Convert.ToSingle(this.Docs.Count());
         float[] idfs = new float[this.Docs.NumOfWords()];
@@ -31,7 +32,7 @@ public class Matrix{
         }
         return idfs;
     }
-
+    //CONSTRUCTOR AID FOR THE FIELD matrix.
     private Vector[] GetMatrix(){
         Vector[] All = new Vector[this.Docs.Count()];
         for(int i = 0; i < this.Docs.Count(); i++){
@@ -49,19 +50,11 @@ public class Matrix{
         for(int i = 0; i < this.voc.Length; i++){
             Dict.Add(this.voc[i], new Dictionary<int, (float tf_idf, float tf)>());
             for(int j = 0; j < this.Docs.Count(); j++){
-                Dict[this.voc[i]].Add(j, (this.matrix[j].GetTfidf()[i], this.matrix[j].GetTf()[i]));
+                Dict[this.voc[i]].Add(j, (this.matrix[j].GetVal(i), this.matrix[j].GetTf(i)));
             }
         }
         return Dict;
     }        
-    
-    public float[] score(string query){
-        float[] scores = new float[this.Docs.Count()];
-        for(int i = 0; i < this.Docs.Count(); i++){
-            scores[i] = this.Dict[query][i].tf_idf;
-        }
-        return scores;
-    }
 
     public (string[] name, float[] score, string[][] matches, float[][] matchesScores, string[] snippet)  GetScores(Vector query){
         float[] scores = new float[this.matrix.Length];
@@ -76,10 +69,10 @@ public class Matrix{
              var x = query.Multiply(this.matrix[i]);
              scores[i] = x.score;
              Allmatches.Add(x.matches);
-             matchesRel.Add(x.matchesScores);
+             matchesRel.Add(x.matchesRel);
         }
         for(int i = 0; i < this.matrix.Length; i++){
-            snippets.Add(this.GetSnippet(this.Docs.GetAllText()[i], Allmatches[i]));
+            snippets.Add(this.GetSnippet(this.Docs.GetAllText()[i], Allmatches[i], matchesRel[i]));
         }
         string[] allSnippets = snippets.ToArray();
         string[][] AllMatchArray = Allmatches.ToArray();
@@ -103,31 +96,120 @@ public class Matrix{
         Array.Reverse(MatchRelevance);
         return (files, scores, AllMatchArray, MatchRelevance, allSnippets);
     }
-
-    public string GetSnippet(string text, string[] words){
-        // if (words.Length == 0){
-        //     return "";
-        // }  
-        // string m = words[0];
-        // string separators = $"[\b{m}\b]";
-        // Match match = Regex.Match(separators, text);
-        // int index = match.Index;
-        // int start = text.IndexOf(" ", index - 50);
-        // int length = text.IndexOf(".", index) - start;
-        // return text.Substring(start, length);
-        return "lorem ipsum";
-    }
-
-    public string PrintVector(int pos){
-        string vector = "";
-        for(int i = 0; i < this.voc.Length; i++){
-            if(i != this.voc.Length - 1){
-                vector = vector + this.matrix[pos].GetTfidf()[i].ToString() + " ";
-            } else{
-                vector = vector + this.matrix[pos].GetTfidf()[i].ToString();
+    string GetSnippet(string text, string[] words, float[] relevance){
+        if (words.Length == 0){
+            return "";
+        }
+        if(text.Length < 100){
+            return text;
+        }
+        float maxCount = 0;
+        int maxStartIndex = 0;
+        for (int i = 0; i < text.Length - 100; i++){
+            float count = 0;
+            int k = 1;
+            for (int j = 0; j < words.Length; j++){
+                int[] matches = GetAllMatches(text.Substring(i, 100), words[j]);
+                if (matches.Length > 0){
+                    count += Convert.ToSingle(Math.Log(matches.Length + 1, 1.5)) * relevance[j] * k;
+                    k++;
+                }
+            }
+            if (count > maxCount){
+                maxCount = count;
+                maxStartIndex = i;
             }
         }
-        return vector;
+        foreach(string word in words){
+            Console.Write(word + maxStartIndex);
+        }
+        Console.WriteLine();
+        int index = maxStartIndex;
+        int len = 100;
+        if (text.LastIndexOf(' ', maxStartIndex) != -1){
+            index = text.LastIndexOf(' ' , maxStartIndex) + 1;
+        }
+        if (text.IndexOf(' ', index + 100) != -1){
+            len = (text.IndexOf(' ', index + 100)) - index;
+        }
+        return text.Substring(index, len);
+    }
+
+    public int[] GetAllMatches(string text, string word){
+        List<int> indexes = new List<int>();
+        MatchCollection matches = Regex.Matches(text, @$"\b{word}\b");
+        foreach(Match match in matches){
+            indexes.Add(match.Index);
+        }
+        return indexes.ToArray();
+    }
+
+    public string GetSuggestion(string qry){
+        string[] words = Regex.Split(qry.ToLower(), "[^a-zA-Z]+").Where(x => !string.IsNullOrEmpty(x)).ToArray();
+        List<(string wrong, string correct)> tup = new List<(string wrong, string correct)>();
+        foreach(string word in words){
+            if(!Array.Exists(this.voc, x => x == word)){
+                tup.Add((word, this.GetCorrection(word)));
+                Console.WriteLine(this.GetCorrection(word));
+            }
+        }
+        string q = qry;
+        foreach((string wrong, string correct) x in tup){
+            q = q.Replace(x.wrong, x.correct);
+        }
+        return q;
+    }
+
+    public string GetCorrection(string word){
+        if(Array.Exists(this.voc, x => x == word)){
+            return word;
+        }
+        int place = Array.BinarySearch(this.voc, word);
+        int min = int.MaxValue;
+        int minPos = place;
+        for (int i = 0; i < this.voc.Length; i++){
+            int cur = this.GetLevanstheins(word, this.voc[i]);
+            if(cur < min){
+                min = cur;
+                minPos = i;
+            }
+        }
+        return this.voc[minPos];
+    }
+
+    public int GetLevanstheins(string s, string t){
+    int n = s.Length;
+    int m = t.Length;
+    int[,] d = new int[n + 1, m + 1];
+    // Verificar argumentos
+    if (n == 0){
+        return m;
+    }
+    if (m == 0){
+        return n;
+    }
+
+    // Inicializar matriz
+    for (int i = 0; i <= n; d[i, 0] = i++){
+    }
+
+    for (int j = 0; j <= m; d[0, j] = j++){
+    }
+
+    // Comenzar iteraciones
+    for (int i = 1; i <= n; i++){
+        for (int j = 1; j <= m; j++){
+            // Calcular costo
+            int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+
+            d[i, j] = Math.Min(
+                Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                d[i - 1, j - 1] + cost);
+        }
+    }
+    
+    // Devolver costo
+    return d[n, m];
     }
 
     public int Module(int x){
