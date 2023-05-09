@@ -13,7 +13,6 @@ public class Moogle{
         // Modifique este método para responder a la búsqueda
         Vector qry = new Vector(query, this.Docs.Vocabulary());
         var scores = this.M.GetScores(qry);
-
         List<SearchItem> Items = new List<SearchItem>();
         for(int i = 0; i < scores.score.Length; i++){
             if(scores.score[i] == 0){
@@ -21,7 +20,6 @@ public class Moogle{
             }
             Items.Add(new SearchItem(scores.name[i], scores.snippet[i], scores.score[i], scores.matches[i]));
         }
-        Console.WriteLine(this.M.GetSuggestion(query));
         SearchItem[] items = Items.ToArray();
         return new SearchResult(items, query);
     }

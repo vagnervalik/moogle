@@ -1,33 +1,31 @@
 ﻿@page "/"
 @inject IJSRuntime JSRuntime
 @using System.Text.RegularExpressions
+@using System
 <PageTitle>Moogle!</PageTitle>
 
 <h1>🔍 Moogle!</h1>
 
 <input class="p-1 my-4" @bind="query" placeholder="Introduzca su búsqueda">  
-
-<button type="default" class="btn btn-primary" @onclick="RunQuery">🔍 Buscar</button>
-
+    <button type="default" class="btn btn-primary" @onclick="RunQuery">🔍 Buscar</button>
 
 
 @if (!string.IsNullOrEmpty(result.Suggestion)) {
     <div class="suggestion" >
-        <p>Resultados para: <strong>@moogle.M.GetSuggestion(query)</strong>?</p>
-        <p>¿Desea buscar <strong><a href="" runat="server" OnServerClick="RunOriginal">@query</a></strong> en su lugar?</p>
+        <p>Quisiste decir <strong><i>@moogle.M.GetSuggestion(query)</i></strong>?</p>
     </div>
 }
 
-
+@if(result.Items().Count() == 0){
+    <h5>No se encontraron documentos relevantes :(</h5>
+}
 <ul class="results">
 @foreach (var item in result.Items()) {
     <li>
         <div class="item">
-            <p class="title"><a href="file:///moogle\Content\@(item.Title)">@item.Title</a></p>
+            <p class="title"><a href="file:///Content\@(item.Title)">@item.Title</a></p>
             <p>...  @{
                     string snip = item.Snippet;
-                    var words = Regex.Split(item.Snippet.ToLower(), "[^a-zA-Z]+").Where(x => !string.IsNullOrEmpty(x)).ToArray();
-                    bool isMatch = false;
                     int pos = 0;
                     while(true){
                         var x = moogle.M.GetMin(snip, item.Matches, pos);
@@ -47,16 +45,24 @@
     private string query = "";
     private SearchResult result = new SearchResult();
     private Moogle moogle;
-    protected override void OnInitialized(){
-        moogle = new Moogle(@"..\Content");
-        ShowAlert();
+    /*protected override void OnInitialized(){
+        int start = Environment.TickCount;
+        this.moogle = new Moogle(@"..\Content");
+        int time = (Environment.TickCount - start)/1000;
+        Console.WriteLine(time + "seconds");
+       ShowAlert(time);
+    }*/
+    protected override async Task OnAfterRenderAsync(bool firstRender){
+        if (firstRender){
+            int start = Environment.TickCount;
+            moogle = new Moogle(@"..\Content");
+            int time = (Environment.TickCount - start)/1000;
+            await JSRuntime.InvokeVoidAsync("alert", $"Database loaded! ({time}s)");
+        }
     }
-    private void ShowAlert(){
-    JSRuntime.InvokeVoidAsync("alert", "Database loaded!");
-    }
-    private void RunOriginal(){
-        result = moogle.Query(query);
-    }
+    /*private void ShowAlert(int time){
+    JSRuntime.InvokeVoidAsync("alert", $"Database loaded! ({time}s)");
+    }*/
     private void RunQuery() {
         result = moogle.Query(moogle.M.GetSuggestion(query));
     }

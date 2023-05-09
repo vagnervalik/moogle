@@ -6,14 +6,14 @@ public class Matrix{
     private float[] Idfs;
     private string[] voc;
     private Vector[] matrix;
-    private Dictionary<string, Dictionary<int, (float tf_idf, float tf)>> Dict;
+    // private Dictionary<string, Dictionary<int, (float tf_idf, float tf)>> Dict;
 
     public Matrix(DataBase Docs){
         this.Docs = Docs;
         this.voc = this.Docs.Vocabulary();
         this.Idfs = this.GetIdfs();
         this.matrix = this.GetMatrix();
-        this.Dict = this.GetDictionary();
+        // this.Dict = this.GetDictionary();
     }
 
     //CONSTRUCTOR AID FOR THE FIELD Idfs.
@@ -45,16 +45,16 @@ public class Matrix{
         return this.matrix;
     }
 
-    public Dictionary<string, Dictionary<int, (float tf_idf, float tf) >> GetDictionary(){
-        Dictionary<string, Dictionary<int, (float tf_idf, float tf)>> Dict = new Dictionary<string, Dictionary<int, (float tf_idf, float tf)>>();
-        for(int i = 0; i < this.voc.Length; i++){
-            Dict.Add(this.voc[i], new Dictionary<int, (float tf_idf, float tf)>());
-            for(int j = 0; j < this.Docs.Count(); j++){
-                Dict[this.voc[i]].Add(j, (this.matrix[j].GetVal(i), this.matrix[j].GetTf(i)));
-            }
-        }
-        return Dict;
-    }        
+    // public Dictionary<string, Dictionary<int, (float tf_idf, float tf) >> GetDictionary(){
+    //     Dictionary<string, Dictionary<int, (float tf_idf, float tf)>> Dict = new Dictionary<string, Dictionary<int, (float tf_idf, float tf)>>();
+    //     for(int i = 0; i < this.voc.Length; i++){
+    //         Dict.Add(this.voc[i], new Dictionary<int, (float tf_idf, float tf)>());
+    //         for(int j = 0; j < this.Docs.Count(); j++){
+    //             Dict[this.voc[i]].Add(j, (this.matrix[j].GetVal(i), this.matrix[j].GetTf(i)));
+    //         }
+    //     }
+    //     return Dict;
+    // }        
 
     public (string[] name, float[] score, string[][] matches, float[][] matchesScores, string[] snippet)  GetScores(Vector query){
         float[] scores = new float[this.matrix.Length];
@@ -105,13 +105,13 @@ public class Matrix{
         }
         float maxCount = 0;
         int maxStartIndex = 0;
-        for (int i = 0; i < text.Length - 100; i++){
+        for (int i = 0; i < text.Length - 200; i++){
             float count = 0;
             int k = 1;
             for (int j = 0; j < words.Length; j++){
-                int[] matches = GetAllMatches(text.Substring(i, 100), words[j]);
+                int[] matches = GetAllMatches(text.Substring(i, 200), words[j]);
                 if (matches.Length > 0){
-                    count += Convert.ToSingle(Math.Log(matches.Length + 1, 1.5)) * relevance[j] * k;
+                    count += Convert.ToSingle(matches.Length) * relevance[j] * k;
                     k++;
                 }
             }
@@ -120,17 +120,13 @@ public class Matrix{
                 maxStartIndex = i;
             }
         }
-        foreach(string word in words){
-            Console.Write(word + maxStartIndex);
-        }
-        Console.WriteLine();
         int index = maxStartIndex;
-        int len = 100;
+        int len = 200;
         if (text.LastIndexOf(' ', maxStartIndex) != -1){
             index = text.LastIndexOf(' ' , maxStartIndex) + 1;
         }
-        if (text.IndexOf(' ', index + 100) != -1){
-            len = (text.IndexOf(' ', index + 100)) - index;
+        if (text.IndexOf(' ', index + 200) != -1){
+            len = (text.IndexOf(' ', index + 200)) - index;
         }
         return text.Substring(index, len);
     }
@@ -150,7 +146,6 @@ public class Matrix{
         foreach(string word in words){
             if(!Array.Exists(this.voc, x => x == word)){
                 tup.Add((word, this.GetCorrection(word)));
-                Console.WriteLine(this.GetCorrection(word));
             }
         }
         string q = qry;
