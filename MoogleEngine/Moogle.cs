@@ -19,11 +19,15 @@ public class Moogle{
             if(scores.score[i] == 0){
                 break;
             }
-            Items.Add(new SearchItem(scores.name[i], scores.snippet[i], scores.score[i]));
+            Items.Add(new SearchItem(scores.name[i], scores.snippet[i], scores.score[i], scores.matches[i]));
         }
-        string suggestion = this.M.GetSuggestion(query);
         Console.WriteLine(this.M.GetSuggestion(query));
         SearchItem[] items = Items.ToArray();
-        return new SearchResult(items, suggestion);
+        return new SearchResult(items, query);
     }
 }
+
+// int Min(int[] array, int p){
+//   if (p==array.Length) return int.MaxValue;
+//   return Math.Min(array[p], Min(array, p+1))
+//}

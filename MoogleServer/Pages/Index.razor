@@ -1,5 +1,6 @@
 ﻿@page "/"
 @inject IJSRuntime JSRuntime
+@using System.Text.RegularExpressions
 <PageTitle>Moogle!</PageTitle>
 
 <h1>🔍 Moogle!</h1>
@@ -12,17 +13,31 @@
 
 @if (!string.IsNullOrEmpty(result.Suggestion)) {
     <div class="suggestion" >
-        <p>Resultados para: <strong><a href="#">@result.Suggestion</a></strong>?</p>
-        <p>¿Desea buscar <strong><a href="#">@query</a></strong> en su lugar?</p>
+        <p>Resultados para: <strong>@moogle.M.GetSuggestion(query)</strong>?</p>
+        <p>¿Desea buscar <strong><a href="" runat="server" OnServerClick="RunOriginal">@query</a></strong> en su lugar?</p>
     </div>
 }
+
 
 <ul class="results">
 @foreach (var item in result.Items()) {
     <li>
         <div class="item">
-            <p class="title"><a href="#">@item.Title</a></p>
-            <p>... @item.Snippet ...</p>
+            <p class="title"><a href="file:///moogle\Content\@(item.Title)">@item.Title</a></p>
+            <p>...  @{
+                    string snip = item.Snippet;
+                    var words = Regex.Split(item.Snippet.ToLower(), "[^a-zA-Z]+").Where(x => !string.IsNullOrEmpty(x)).ToArray();
+                    bool isMatch = false;
+                    int pos = 0;
+                    while(true){
+                        var x = moogle.M.GetMin(snip, item.Matches, pos);
+                        if(x.pos == -1) break;
+                        @(snip.Substring(pos, x.pos - pos)) 
+                        <span class="highlight">@x.word</span>
+                        pos = x.pos + x.word.Length;
+                    }
+                }
+             ... </p>
         </div>
     </li>
 }
@@ -39,10 +54,10 @@
     private void ShowAlert(){
     JSRuntime.InvokeVoidAsync("alert", "Database loaded!");
     }
-    private void RunSuggestion(){
-        result = moogle.Query(result.Suggestion);
+    private void RunOriginal(){
+        result = moogle.Query(query);
     }
     private void RunQuery() {
-        result = moogle.Query(query);
+        result = moogle.Query(moogle.M.GetSuggestion(query));
     }
 }

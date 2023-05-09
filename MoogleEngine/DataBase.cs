@@ -74,7 +74,7 @@ public class DataBase{
     public string[] Vocabulary(){
        return this.AllWords;
     }
-    
+
     //RETURNS ALL THE WORDS IN A DOCUMENTS BASED ON A GIVEN INDEX.
     public string[] Get(int pos){
         return this.Docs[pos];
@@ -91,5 +91,9 @@ public class DataBase{
 
     public string[] GetAllText(){
         return this.AllText;
+    }
+
+    public string GetAddresses(int pos){
+        return Directory.GetFiles(this.address)[pos];
     }
 }

@@ -212,6 +212,26 @@ public class Matrix{
     return d[n, m];
     }
 
+    public (string word, int pos) GetMin(string text, string[] words, int pos){
+        if (pos > text.Length || pos < 0){
+            throw new ArgumentException("Index was out of range!!!");
+        }
+        int min = int.MaxValue;
+        string word = "";
+        for(int i = 0; i < words.Length; i++){
+            int cur = text.IndexOf(words[i], pos);
+            if (cur == -1) continue;
+            if(cur < min){
+                min = cur;
+                word = words[i];
+            }
+        }
+        if(min == int.MaxValue){
+            return (null, -1);
+        }
+        return (word, min);
+    }
+
     public int Module(int x){
         if (x > 0){
             return x;
