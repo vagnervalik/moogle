@@ -111,8 +111,8 @@ public class Matrix{
             for (int j = 0; j < words.Length; j++){
                 int[] matches = GetAllMatches(text.Substring(i, 200), words[j]);
                 if (matches.Length > 0){
-                    count += Convert.ToSingle(matches.Length) * relevance[j] * k;
-                    k++;
+                    count += Convert.ToSingle(Math.Log(matches.Length + 1)) * relevance[j] * k;
+                    k ++;
                 }
             }
             if (count > maxCount){
@@ -133,7 +133,8 @@ public class Matrix{
 
     public int[] GetAllMatches(string text, string word){
         List<int> indexes = new List<int>();
-        MatchCollection matches = Regex.Matches(text, @$"\b{word}\b");
+        MatchCollection matches = Regex.Matches(text, @$"(?<!\w)(_)?\b{word}\b(_)?(?!\w)", RegexOptions.IgnoreCase);
+        // MatchCollection matches = Regex.Matches(text, @$"\b{word}\b");
         foreach(Match match in matches){
             indexes.Add(match.Index);
         }
@@ -207,6 +208,19 @@ public class Matrix{
     return d[n, m];
     }
 
+    // public (int first, int second) GetBorders(string text, string[] words){
+    //     int min = int.MaxValue;
+    //     int max = int.MinValue;
+    //     for(int i = 0; i < words.Length; i++){
+    //         MatchCollection matches = Regex.Matches(text, @$"(?<!\w)(_)?\b{words[i]}\b(_)?(?!\w)", RegexOptions.IgnoreCase);
+    //         if (!matches == null) continue;
+    //         cur1 = matches[0].Index;
+    //         cur2 = matches[matches.Count - 1].Index;
+    //         if(match.LastIndexOf < min){
+    //             min = cur;
+    //         }
+    //     }
+    // }
     public (string word, int pos) GetMin(string text, string[] words, int pos){
         if (pos > text.Length || pos < 0){
             throw new ArgumentException("Index was out of range!!!");
@@ -214,11 +228,12 @@ public class Matrix{
         int min = int.MaxValue;
         string word = "";
         for(int i = 0; i < words.Length; i++){
-            int cur = text.IndexOf(words[i], pos);
-            if (cur == -1) continue;
+            Match match = Regex.Match(text.Substring(pos), @$"(?<!\w)(_)?\b{words[i]}\b(_)?(?!\w)", RegexOptions.IgnoreCase);
+            if (!match.Success) continue;
+            int cur = match.Index + pos;
             if(cur < min){
                 min = cur;
-                word = words[i];
+                word = text.Substring(cur, words[i].Length);
             }
         }
         if(min == int.MaxValue){
