@@ -16,7 +16,7 @@
     </div>
 }
 
-@if(result.Items().Count() == 0){
+@if(result.Items().Count() == 0 && times >= 2){
     <h5>No se encontraron documentos relevantes :(</h5>
 }
 <ul class="results">
@@ -28,8 +28,12 @@
                     string snip = item.Snippet;
                     int pos = 0;
                     while(true){
+                        Console.WriteLine(snip);
                         var x = moogle.M.GetMin(snip, item.Matches, pos);
-                        if(x.pos == -1) break;
+                        if(x.pos == -1) {
+                            @(snip.Substring(pos))
+                            break;
+                        }
                         @(snip.Substring(pos, x.pos - pos)) 
                         <span class="highlight">@x.word</span>
                         pos = x.pos + x.word.Length;
@@ -45,6 +49,7 @@
     private string query = "";
     private SearchResult result = new SearchResult();
     private Moogle moogle;
+    private int times = 0;
     /*protected override void OnInitialized(){
         int start = Environment.TickCount;
         this.moogle = new Moogle(@"..\Content");
@@ -65,5 +70,6 @@
     }*/
     private void RunQuery() {
         result = moogle.Query(moogle.M.GetSuggestion(query));
+        times++;
     }
 }

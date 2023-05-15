@@ -107,12 +107,12 @@ public class Matrix{
         int maxStartIndex = 0;
         for (int i = 0; i < text.Length - 200; i++){
             float count = 0;
-            int k = 1;
+            int k = 10;
             for (int j = 0; j < words.Length; j++){
                 int[] matches = GetAllMatches(text.Substring(i, 200), words[j]);
                 if (matches.Length > 0){
-                    count += Convert.ToSingle(Math.Log(matches.Length + 1)) * relevance[j] * k;
-                    k ++;
+                    count += Convert.ToSingle(matches.Length) * relevance[j] * k;
+                    k += 1000;
                 }
             }
             if (count > maxCount){
@@ -120,10 +120,12 @@ public class Matrix{
                 maxStartIndex = i;
             }
         }
-        int index = maxStartIndex;
+        int x = this.Correct(text.Substring(maxStartIndex, 200), words);
+        int index = this.RejectNegative(x + maxStartIndex);
+        Console.WriteLine(x);
         int len = 200;
-        if (text.LastIndexOf(' ', maxStartIndex) != -1){
-            index = text.LastIndexOf(' ' , maxStartIndex) + 1;
+        if (text.LastIndexOf(' ', index) != -1){
+            index = text.LastIndexOf(' ' , index) + 1;
         }
         if (text.IndexOf(' ', index + 200) != -1){
             len = (text.IndexOf(' ', index + 200)) - index;
@@ -131,10 +133,42 @@ public class Matrix{
         return text.Substring(index, len);
     }
 
+    public int RejectNegative(int x){
+        if(x < 0 )return 0;
+        return x;
+    }
+    public int Correct(string text, string[] words){
+        int min = int.MaxValue;
+        int max = int.MinValue;
+        for(int i = 0; i < words.Length; i++){
+            MatchCollection matches = Regex.Matches(text,  @$"(?<![a-zA-Z0-9]){words[i]}(?![a-zA-Z0-9])", RegexOptions.IgnoreCase);
+            if (matches.Count == 0) continue;
+            int cur1 = matches[0].Index;
+            int cur2 = matches[matches.Count - 1].Index;
+            if(cur1 < min){
+                min = cur1;
+            }
+            if(cur2 > max){
+                max = cur2;
+            }
+        }
+        if(min == max){
+            return 100;
+        }
+        int correction = 0;
+        int sum = min + max;
+        if(sum >= 180 && sum <= 200){
+        } else if(sum < 180){
+            correction = (sum - 180)/2;
+        } else if(sum > 200){
+            correction = (sum - 200)/2;
+        }
+        return correction;
+    }
     public int[] GetAllMatches(string text, string word){
         List<int> indexes = new List<int>();
-        MatchCollection matches = Regex.Matches(text, @$"(?<!\w)(_)?\b{word}\b(_)?(?!\w)", RegexOptions.IgnoreCase);
-        // MatchCollection matches = Regex.Matches(text, @$"\b{word}\b");
+        // MatchCollection matches = Regex.Matches(text,  @$"(?<!\w)(_)?\b{word}\b(_)?(?!\w)", RegexOptions.IgnoreCase);
+        MatchCollection matches = Regex.Matches(text, @$"(?<![a-zA-Z0-9]){word}(?![a-zA-Z0-9])", RegexOptions.IgnoreCase);
         foreach(Match match in matches){
             indexes.Add(match.Index);
         }
@@ -208,19 +242,7 @@ public class Matrix{
     return d[n, m];
     }
 
-    // public (int first, int second) GetBorders(string text, string[] words){
-    //     int min = int.MaxValue;
-    //     int max = int.MinValue;
-    //     for(int i = 0; i < words.Length; i++){
-    //         MatchCollection matches = Regex.Matches(text, @$"(?<!\w)(_)?\b{words[i]}\b(_)?(?!\w)", RegexOptions.IgnoreCase);
-    //         if (!matches == null) continue;
-    //         cur1 = matches[0].Index;
-    //         cur2 = matches[matches.Count - 1].Index;
-    //         if(match.LastIndexOf < min){
-    //             min = cur;
-    //         }
-    //     }
-    // }
+    
     public (string word, int pos) GetMin(string text, string[] words, int pos){
         if (pos > text.Length || pos < 0){
             throw new ArgumentException("Index was out of range!!!");
@@ -228,7 +250,7 @@ public class Matrix{
         int min = int.MaxValue;
         string word = "";
         for(int i = 0; i < words.Length; i++){
-            Match match = Regex.Match(text.Substring(pos), @$"(?<!\w)(_)?\b{words[i]}\b(_)?(?!\w)", RegexOptions.IgnoreCase);
+            Match match = Regex.Match(text.Substring(pos), @$"(?<![a-zA-Z0-9]){words[i]}(?![a-zA-Z0-9])", RegexOptions.IgnoreCase);
             if (!match.Success) continue;
             int cur = match.Index + pos;
             if(cur < min){
