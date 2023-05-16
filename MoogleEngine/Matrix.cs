@@ -6,14 +6,12 @@ public class Matrix{
     private float[] Idfs;
     private string[] voc;
     private Vector[] matrix;
-    // private Dictionary<string, Dictionary<int, (float tf_idf, float tf)>> Dict;
 
     public Matrix(DataBase Docs){
         this.Docs = Docs;
         this.voc = this.Docs.Vocabulary();
         this.Idfs = this.GetIdfs();
         this.matrix = this.GetMatrix();
-        // this.Dict = this.GetDictionary();
     }
 
     //CONSTRUCTOR AID FOR THE FIELD Idfs.
@@ -43,19 +41,23 @@ public class Matrix{
 
     public Vector[] Get(){
         return this.matrix;
-    }
+    }     
 
-    // public Dictionary<string, Dictionary<int, (float tf_idf, float tf) >> GetDictionary(){
-    //     Dictionary<string, Dictionary<int, (float tf_idf, float tf)>> Dict = new Dictionary<string, Dictionary<int, (float tf_idf, float tf)>>();
-    //     for(int i = 0; i < this.voc.Length; i++){
-    //         Dict.Add(this.voc[i], new Dictionary<int, (float tf_idf, float tf)>());
-    //         for(int j = 0; j < this.Docs.Count(); j++){
-    //             Dict[this.voc[i]].Add(j, (this.matrix[j].GetVal(i), this.matrix[j].GetTf(i)));
-    //         }
-    //     }
-    //     return Dict;
-    // }        
-
+    /// <summary>
+    /// The function takes a query vector and returns an array of document names, scores, matched terms,
+    /// relevance scores, and snippets sorted by relevance to the query.
+    /// </summary>
+    /// <param name="Vector">The "Vector" parameter is an input vector used to calculate the scores for
+    /// each document in the collection. It is likely a vector representation of the user's
+    /// query.</param>
+    /// <returns>
+    /// The method is returning a tuple containing five arrays: 
+    /// - an array of file names
+    /// - an array of scores
+    /// - a 2D array of matches for each file
+    /// - a 2D array of relevance scores for each match
+    /// - an array of snippets for each file
+    /// </returns>
     public (string[] name, float[] score, string[][] matches, float[][] matchesScores, string[] snippet)  GetScores(Vector query){
         float[] scores = new float[this.matrix.Length];
         string[] files = new string[this.Docs.Count()];
@@ -96,7 +98,25 @@ public class Matrix{
         Array.Reverse(MatchRelevance);
         return (files, scores, AllMatchArray, MatchRelevance, allSnippets);
     }
-    string GetSnippet(string text, string[] words, float[] relevance){
+
+    /// <summary>
+    /// The function returns a snippet of text that contains the most relevant words based on their
+    /// relevance scores.
+    /// </summary>
+    /// <param name="text">The text to search for snippets in.</param>
+    /// <param name="words">An array of strings representing the words to search for in the
+    /// text.</param>
+    /// <param name="relevance">An array of floats representing the relevance/importance of each word in
+    /// the search query. The order of the relevance values should correspond to the order of the words
+    /// in the words array.</param>
+    /// <returns>
+    /// The method is returning a string, which is a snippet of text from the input text that contains
+    /// the highest relevance score for the given words. The snippet is determined by searching for the
+    /// highest count of matches for the given words within a 200-character window of the input text,
+    /// and then returning a 200-character substring centered around the highest-scoring match. The
+    /// substring is then adjusted to start and end
+    /// </returns>
+    public string GetSnippet(string text, string[] words, float[] relevance){
         if (words.Length == 0){
             return "";
         }
@@ -122,7 +142,6 @@ public class Matrix{
         }
         int x = this.Correct(text.Substring(maxStartIndex, 200), words);
         int index = this.RejectNegative(x + maxStartIndex);
-        Console.WriteLine(x);
         int len = 200;
         if (text.LastIndexOf(' ', index) != -1){
             index = text.LastIndexOf(' ' , index) + 1;
@@ -133,10 +152,29 @@ public class Matrix{
         return text.Substring(index, len);
     }
 
+    /// <summary>
+    /// The function returns 0 if the input is negative, otherwise it returns the input.
+    /// </summary>
+    /// <param name="x">an integer value that may or may not be negative.</param>
+    /// <returns>
+    /// If the input integer `x` is less than 0, then the method returns 0. Otherwise, it returns the
+    /// input integer `x`.
+    /// </returns>
     public int RejectNegative(int x){
         if(x < 0 )return 0;
         return x;
     }
+    /// <summary>
+    /// The function calculates the correction needed for a given text based on the position of
+    /// specified words within it.
+    /// </summary>
+    /// <param name="text">a string representing the text to be corrected</param>
+    /// <param name="words">An array of strings containing the words to be searched for in the text
+    /// parameter.</param>
+    /// <returns>
+    /// The method is returning an integer value that represents the correction needed to adjust the
+    /// position of a string of words within a given text.
+    /// </returns>
     public int Correct(string text, string[] words){
         int min = int.MaxValue;
         int max = int.MinValue;
@@ -165,6 +203,16 @@ public class Matrix{
         }
         return correction;
     }
+    /// <summary>
+    /// The function returns an array of indexes where a given word appears in a given text, using
+    /// regular expressions to match the word.
+    /// </summary>
+    /// <param name="text">The text in which we want to find all occurrences of the word.</param>
+    /// <param name="word">The word to search for in the text.</param>
+    /// <returns>
+    /// An array of integers representing the indexes of all matches of the given word in the given
+    /// text.
+    /// </returns>
     public int[] GetAllMatches(string text, string word){
         List<int> indexes = new List<int>();
         // MatchCollection matches = Regex.Matches(text,  @$"(?<!\w)(_)?\b{word}\b(_)?(?!\w)", RegexOptions.IgnoreCase);
@@ -175,6 +223,16 @@ public class Matrix{
         return indexes.ToArray();
     }
 
+   /// <summary>
+   /// The function takes a string query, identifies incorrect words in it, suggests corrections for
+   /// those words, and returns the corrected query.
+   /// </summary>
+   /// <param name="qry">The input query string that needs to be checked for spelling errors and
+   /// suggestions.</param>
+   /// <returns>
+   /// The method `GetSuggestion` returns a string that is the input query `qry` with any misspelled
+   /// words corrected based on the vocabulary `voc` provided to the object.
+   /// </returns>
     public string GetSuggestion(string qry){
         string[] words = Regex.Split(qry.ToLower(), "[^a-zA-Z]+").Where(x => !string.IsNullOrEmpty(x)).ToArray();
         List<(string wrong, string correct)> tup = new List<(string wrong, string correct)>();
@@ -190,6 +248,15 @@ public class Matrix{
         return q;
     }
 
+    /// <summary>
+    /// The function takes a word and returns either the word itself if it exists in a given vocabulary
+    /// array or the closest matching word based on Levenshtein distance.
+    /// </summary>
+    /// <param name="word">The word that needs to be corrected.</param>
+    /// <returns>
+    /// The method is returning a string, which is the closest matching word to the input word based on
+    /// the Levenshtein distance algorithm.
+    /// </returns>
     public string GetCorrection(string word){
         if(Array.Exists(this.voc, x => x == word)){
             return word;
@@ -207,42 +274,61 @@ public class Matrix{
         return this.voc[minPos];
     }
 
+    /// <summary>
+    /// The function calculates the Levenshtein distance between two strings using dynamic programming.
+    /// </summary>
+    /// <param name="s">a string representing the first word or phrase</param>
+    /// <param name="t">The second string input for which we want to calculate the Levenshtein
+    /// distance.</param>
+    /// <returns>
+    /// an integer value which represents the Levenshtein distance between two input strings 's' and
+    /// 't'.
+    /// </returns>
     public int GetLevanstheins(string s, string t){
-    int n = s.Length;
-    int m = t.Length;
-    int[,] d = new int[n + 1, m + 1];
-    // Verificar argumentos
-    if (n == 0){
-        return m;
-    }
-    if (m == 0){
-        return n;
-    }
-
-    // Inicializar matriz
-    for (int i = 0; i <= n; d[i, 0] = i++){
-    }
-
-    for (int j = 0; j <= m; d[0, j] = j++){
-    }
-
-    // Comenzar iteraciones
-    for (int i = 1; i <= n; i++){
-        for (int j = 1; j <= m; j++){
-            // Calcular costo
-            int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
-
-            d[i, j] = Math.Min(
-                Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
-                d[i - 1, j - 1] + cost);
+        int n = s.Length;
+        int m = t.Length;
+        int[,] d = new int[n + 1, m + 1];
+        if (n == 0){
+            return m;
         }
-    }
-    
-    // Devolver costo
-    return d[n, m];
+        if (m == 0){
+            return n;
+        }
+
+        for (int i = 0; i <= n; d[i, 0] = i++){
+        }
+
+        for (int j = 0; j <= m; d[0, j] = j++){
+        }
+
+        for (int i = 1; i <= n; i++){
+            for (int j = 1; j <= m; j++){
+                int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+
+                d[i, j] = Math.Min(
+                    Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                    d[i - 1, j - 1] + cost);
+            }
+        }
+        return d[n, m];
     }
 
     
+    /// <summary>
+    /// The function returns the minimum occurrence of a word from a given list of words in a given text
+    /// starting from a specified position.
+    /// </summary>
+    /// <param name="text">The input text string to search for the minimum occurrence of a word from the
+    /// given array of words.</param>
+    /// <param name="words">An array of strings containing the words to search for in the text.</param>
+    /// <param name="pos">The starting position in the text where the search for the minimum word
+    /// occurrence should begin.</param>
+    /// <returns>
+    /// A tuple containing a string and an integer value. The string represents the word found in the
+    /// text that matches one of the words in the given array, and the integer represents the position
+    /// of the first character of the found word in the text. If no match is found, the tuple contains a
+    /// null string and a value of -1.
+    /// </returns>
     public (string word, int pos) GetMin(string text, string[] words, int pos){
         if (pos > text.Length || pos < 0){
             throw new ArgumentException("Index was out of range!!!");

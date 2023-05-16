@@ -24,8 +24,3 @@ public class Moogle{
         return new SearchResult(items, query);
     }
 }
-
-// int Min(int[] array, int p){
-//   if (p==array.Length) return int.MaxValue;
-//   return Math.Min(array[p], Min(array, p+1))
-//}

@@ -28,7 +28,6 @@
                     string snip = item.Snippet;
                     int pos = 0;
                     while(true){
-                        Console.WriteLine(snip);
                         var x = moogle.M.GetMin(snip, item.Matches, pos);
                         if(x.pos == -1) {
                             @(snip.Substring(pos))
